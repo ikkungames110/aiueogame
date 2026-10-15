@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>あいうえバトル</title>
+  <meta name="description" content="ことばを1文字ずつ攻撃しあう、もじあてバトル。P2P でオンライン対戦。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+</head>
+<body>
+  <header class="top">
+    <h1><span class="a">あ</span><span class="i">い</span><span class="u">う</span><span class="e">え</span>バトル</h1>
+    <button id="rules-btn" class="ghost">ルール</button>
+  </header>
+
+  <main>
+    <!-- タイトル -->
+    <section id="screen-title" class="screen">
+      <div class="card">
+        <label class="field">なまえ
+          <input id="name" maxlength="12" placeholder="例：たろう" autocomplete="nickname">
+        </label>
+        <button id="create" class="primary">部屋をつくる</button>
+        <div class="divider"><span>または</span></div>
+        <p id="join-hint" class="hint" hidden>招待された部屋コードが入っています。名前を入れて参加してください。</p>
+        <label class="field">部屋コード
+          <input id="code" maxlength="5" placeholder="ABCDE" autocapitalize="characters" autocomplete="off">
+        </label>
+        <button id="join" class="secondary">部屋に参加する</button>
+        <p id="connecting" class="hint" hidden>接続中…</p>
+      </div>
+      <p class="note">2〜6人で遊べます。通信はブラウザ同士の P2P（WebRTC）です。</p>
+    </section>
+
+    <!-- ロビー -->
+    <section id="screen-lobby" class="screen" hidden>
+      <div class="card">
+        <div class="room">
+          <div>部屋コード</div>
+          <div id="room-code" class="code"></div>
+          <button id="copy-link" class="ghost">招待リンクをコピー</button>
+        </div>
+        <h2>プレイヤー <small id="member-count"></small></h2>
+        <ul id="members" class="members"></ul>
+
+        <div id="host-settings">
+          <label class="field">お題
+            <div class="row">
+              <input id="theme" maxlength="30">
+              <button id="draw-theme" class="ghost">お題カードをひく</button>
+            </div>
+          </label>
+          <label class="field">連続攻撃（1ターンに攻撃できる回数）
+            <select id="max-attacks">
+              <option value="1">1回（連続攻撃なし）</option>
+              <option value="2">2回まで（標準）</option>
+              <option value="3">3回まで</option>
+              <option value="99">当たるかぎり何回でも</option>
+            </select>
+          </label>
+          <button id="start" class="primary">ゲーム開始！</button>
+        </div>
+        <div id="guest-wait">
+          <p>お題：<b id="lobby-theme"></b>　／　攻撃回数：<b id="lobby-max"></b></p>
+          <p class="hint">ホストがゲームを始めるのを待っています…</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ことば決め -->
+    <section id="screen-input" class="screen" hidden>
+      <div class="card">
+        <div class="theme-card"><small>お題</small><span id="input-theme"></span></div>
+        <form id="word-form">
+          <p>お題にあう<b>2〜7文字</b>のことばを、ひらがなで決めてください。<br>
+            <small>濁点・半濁点・小さい文字は攻撃のとき清音・大きい文字としてあつかいます（例：「ぎょうざ」は き・よ・う・さ で開く）。あまったマスは「×」になります。</small></p>
+          <input id="word" maxlength="10" placeholder="例：からあげ" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <div id="preview"></div>
+          <p id="word-error" class="error"></p>
+          <button id="submit-word" class="primary" disabled>このことばで決定（ひみつ）</button>
+        </form>
+        <div id="word-done" hidden>
+          <p>あなたのことば：</p>
+          <div id="my-word-confirmed"></div>
+          <p class="hint">ほかの人がことばを決めるのを待っています…</p>
+        </div>
+        <ul id="ready-list" class="ready"></ul>
+      </div>
+    </section>
+
+    <!-- 対戦 -->
+    <section id="screen-play" class="screen" hidden>
+      <div class="theme-card small"><small>お題</small><span id="play-theme"></span></div>
+      <div id="status" class="status"></div>
+      <div id="players" class="players"></div>
+      <div id="board-wrap" class="board-wrap">
+        <div id="board" class="board"></div>
+        <div id="board-extra" class="board extra"></div>
+      </div>
+      <div id="end-actions" hidden>
+        <button id="again" class="primary">もう一度あそぶ（ロビーへ）</button>
+        <p id="again-wait" class="hint">ホストが次のゲームを準備するのを待っています…</p>
+      </div>
+      <ul id="log" class="log"></ul>
+    </section>
+  </main>
+
+  <footer><button id="leave" class="ghost">タイトルへもどる</button></footer>
+
+  <dialog id="rules">
+    <h2>あそびかた</h2>
+    <ol>
+      <li>お題カードをひいて、お題を決めます。</li>
+      <li>みんなはお題にあう<b>2〜7文字</b>のことばをひみつで決めます。7マスにあまりがあれば「<b>×</b>」でうめます。</li>
+      <li>手番の人は50音ボードから1文字えらんで<b>攻撃</b>します。その文字をもつ人は<b>全員</b>（攻撃した本人も！）そのマスを開きます。</li>
+      <li>だれかに当たったら<b>連続攻撃</b>できます（標準は1ターン2回まで）。だれにも当たらなければ次の人へ。</li>
+      <li>一度使った文字はもう使えません。「ー」や「×」でも攻撃できます。</li>
+      <li>ことばが全部開いた人は<b>脱落</b>。最後まで残った人の勝ち！</li>
+    </ol>
+    <p><small>濁音・半濁音は清音（が→か、ぱ→は）、小さい文字は大きい文字（ゃ→や、っ→つ）としてあつかいます。</small></p>
+    <button id="rules-close" class="primary">とじる</button>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="game.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
