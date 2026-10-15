@@ -4,7 +4,7 @@
 PeerJS（WebRTC）を使った P2P 通信で 2〜6 人対戦できます。
 
 ## あそびかた
-1. `index.html` を静的サーバーで配信してブラウザで開く（例: `python3 -m http.server`）
+1. https://aiueogame.pages.dev/ を開く（ローカルなら `python3 -m http.server` で配信。デプロイは `npm run deploy`）
 2. ホストが「部屋をつくる」→ 招待リンク（または5文字の部屋コード）を共有
 3. 参加者はリンクを開いて名前を入れ「部屋に参加する」
 

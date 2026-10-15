@@ -1,0 +1,8 @@
+{
+  "name": "aiueogame",
+  "private": true,
+  "scripts": {
+    "build": "rm -rf dist && mkdir dist && cp index.html style.css game.js app.js dist/",
+    "deploy": "npm run build && npx wrangler pages deploy dist --project-name aiueogame --branch main"
+  }
+}
