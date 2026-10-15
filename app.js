@@ -332,7 +332,7 @@
       slots = G.parseWord(v).map((s) => ({ c: s.c, revealed: false }));
     } catch (e) {
       err = v.trim() ? e.message : '';
-      const chars = Array.from(v.replace(/\s/g, '')).slice(0, G.SLOTS);
+      const chars = Array.from(v.replace(/\s/g, '')).slice(0, G.SLOTS).map(G.normalizeChar);
       slots = Array.from({ length: G.SLOTS }, (_, i) => ({ c: chars[i] || null, revealed: false }));
     }
     $('#preview').innerHTML = slotsHtml(slots);

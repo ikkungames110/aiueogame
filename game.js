@@ -19,8 +19,9 @@
     ['ら', 'り', 'る', 'れ', 'ろ'],
     ['わ', null, 'を', null, 'ん'],
   ];
-  const EXTRA = ['ー', BLANK];
+  const EXTRA = ['ー'];
   const ATTACKABLE = new Set(BOARD_COLUMNS.flat().filter(Boolean).concat(EXTRA));
+  // ×（あまりマス）は攻撃できず、×以外が全部開いたら脱落
 
   const NORMALIZE = {};
   const pairs = [
@@ -55,8 +56,9 @@
     }
     const slots = raw.map((c) => {
       const n = normalizeChar(c);
-      if (!ATTACKABLE.has(n) || n === BLANK) throw new Error(`「${c}」は使えません。ひらがなで入力してください`);
-      return { c, n };
+      if (!ATTACKABLE.has(n)) throw new Error(`「${c}」は使えません。ひらがなで入力してください`);
+      // 札は濁点・小文字のない形で書く（例：ぎょうざ → きようさ）
+      return { c: n, n };
     });
     while (slots.length < SLOTS) slots.push({ c: BLANK, n: BLANK });
     return slots;
@@ -126,6 +128,10 @@
     }
   }
 
+  function isAllOpen(p) {
+    return p.word.every((s, i) => p.revealed[i] || s.n === BLANK);
+  }
+
   function checkEnd(g) {
     const alive = alivePlayers(g);
     if (alive.length <= 1) {
@@ -172,7 +178,7 @@
       g.log.push(`${attacker.name} さんの攻撃「${ch}」→ だれにも当たらなかった`);
     }
 
-    eliminate(g, hits.map((h) => h.p).filter((p) => p.revealed.every(Boolean)), `${attacker.name} さんの「${ch}」で全部開いた`);
+    eliminate(g, hits.map((h) => h.p).filter(isAllOpen), `${attacker.name} さんの「${ch}」で全部開いた`);
     if (checkEnd(g)) return { hit: hits.length > 0 };
 
     if (hits.length && !attacker.out && g.attacksThisTurn < g.maxAttacks) {
